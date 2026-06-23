@@ -6,13 +6,16 @@ import { GaugeBar } from "@/components/GaugeBar";
 import { WoundGauge } from "@/components/WoundGauge";
 import { useEditMode } from "@/hooks/useEditMode";
 import {
+  ABILITY_DOT_TIERS,
   ABILITY_KEYS,
   abilityBonus,
   createBlankSheet,
+  RESOURCE_DOT_TIERS,
   resourcePool,
   woundSlots,
   type AbilityKey,
   type ResourceKey,
+  type WoundState,
 } from "@/lib/sheet";
 
 export default function Home() {
@@ -21,13 +24,24 @@ export default function Home() {
 
   const staminaMax = resourcePool(sheet.resources.stamina.dots);
   const focusMax = resourcePool(sheet.resources.focus.dots);
-  const woundMax = woundSlots(sheet.resources.vigor.dots);
 
   const setAbilityDots = (key: AbilityKey, dots: number) =>
     setSheet((s) => ({ ...s, abilities: { ...s.abilities, [key]: { dots } } }));
 
   const setResourceDots = (key: ResourceKey, dots: number) =>
-    setSheet((s) => ({ ...s, resources: { ...s.resources, [key]: { dots } } }));
+    setSheet((s) => {
+      const resources = { ...s.resources, [key]: { dots } };
+      if (key !== "vigor") return { ...s, resources };
+
+      // Vigor's pool size is the wound track size — resize wounds to
+      // match, preserving existing slot states where possible.
+      const newWoundMax = woundSlots(dots);
+      const wounds: WoundState[] = Array.from(
+        { length: newWoundMax },
+        (_, i) => s.wounds[i] ?? "empty",
+      );
+      return { ...s, resources, wounds };
+    });
 
   return (
     <main className="mx-auto flex max-w-2xl flex-1 flex-col gap-6 p-8">
@@ -88,7 +102,7 @@ export default function Home() {
             <DotTrack
               label={`${key} (+${abilityBonus(sheet.abilities[key].dots)})`}
               dots={sheet.abilities[key].dots}
-              max={20}
+              tiers={ABILITY_DOT_TIERS}
               editMode={editMode}
               setDots={(dots) => setAbilityDots(key, dots)}
             />
@@ -103,21 +117,21 @@ export default function Home() {
         <DotTrack
           label="Stamina"
           dots={sheet.resources.stamina.dots}
-          max={45}
+          tiers={RESOURCE_DOT_TIERS}
           editMode={editMode}
           setDots={(dots) => setResourceDots("stamina", dots)}
         />
         <DotTrack
           label="Focus"
           dots={sheet.resources.focus.dots}
-          max={45}
+          tiers={RESOURCE_DOT_TIERS}
           editMode={editMode}
           setDots={(dots) => setResourceDots("focus", dots)}
         />
         <DotTrack
           label="Vigor"
           dots={sheet.resources.vigor.dots}
-          max={45}
+          tiers={RESOURCE_DOT_TIERS}
           editMode={editMode}
           setDots={(dots) => setResourceDots("vigor", dots)}
         />

@@ -1,5 +1,11 @@
 import type { WoundState } from "@/lib/sheet";
 
+function woundColor(state: WoundState): string {
+  if (state === "mortal") return "#c0392b";
+  if (state === "flesh") return "#d4a017";
+  return "transparent";
+}
+
 // Linear gauge for the wound track. Each segment is a two-stage click
 // target: empty -> flesh (50% fill) -> mortal (100% fill) -> empty.
 export function WoundGauge({
@@ -33,18 +39,13 @@ export function WoundGauge({
             key={index}
             type="button"
             aria-label={`Wound slot ${index + 1}: ${state}, click to advance`}
-            className="relative h-4 flex-1 overflow-hidden rounded-sm border"
-            style={{ borderColor: state === "empty" ? "var(--color-border)" : "var(--color-accent)" }}
+            className="h-4 flex-1 rounded-sm border transition-colors"
+            style={{
+              borderColor: state === "empty" ? "var(--color-border)" : woundColor(state),
+              backgroundColor: state === "empty" ? "transparent" : woundColor(state),
+            }}
             onClick={() => advance(index)}
-          >
-            <span
-              className="absolute inset-y-0 left-0 transition-all"
-              style={{
-                width: state === "mortal" ? "100%" : state === "flesh" ? "50%" : "0%",
-                backgroundColor: "var(--color-accent)",
-              }}
-            />
-          </button>
+          />
         ))}
       </div>
     </div>
