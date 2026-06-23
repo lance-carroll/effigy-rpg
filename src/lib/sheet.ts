@@ -1,5 +1,7 @@
 // Core data model for an Effigy character sheet (d12 branch v4 SRD).
 
+import { createBlankInventory, type Inventory } from "@/lib/equipment";
+
 export type AbilityKey = "STR" | "DEX" | "CON" | "INT" | "WIS" | "CHA" | "LCK";
 
 export const ABILITY_KEYS: AbilityKey[] = ["STR", "DEX", "CON", "INT", "WIS", "CHA", "LCK"];
@@ -71,8 +73,8 @@ export function woundSlots(vigorDots: number): number {
 }
 
 // Derived defenses: higher of the two governing ability bonuses + 6,
-// clamped to [1, 12]. Armor has no formula — it's equipment only, so
-// it's tracked as a raw editable value until equipment exists.
+// clamped to [1, 12]. Armor has no ability-bonus base — see
+// armorDefense() in @/lib/equipment, which sums equipped gear instead.
 function derivedDefense(bonusA: number, bonusB: number): number {
   return Math.max(1, Math.min(12, Math.max(bonusA, bonusB) + 6));
 }
@@ -99,8 +101,7 @@ export interface CharacterSheet {
   // Chosen focuses per ability — capped at abilityBonus(dots) selections.
   focuses: Record<AbilityKey, string[]>;
 
-  // Equipment-only defense — no formula until equipment is modeled.
-  armor: number;
+  inventory: Inventory;
 
   // Live play-mode state.
   staminaExhausted: number;
@@ -126,7 +127,7 @@ export function createBlankSheet(name = "New Character"): CharacterSheet {
       focus: { dots: 0 },
       vigor: { dots: 0 },
     },
-    armor: 0,
+    inventory: createBlankInventory(),
     staminaExhausted: 0,
     focusExhausted: 0,
     tidePoints: 3,

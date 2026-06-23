@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { AnimatedDie } from "@/components/AnimatedDie";
+import { QUALITY_POTENCY, WEAPON_CATALOG, type EquippedWeapon } from "@/lib/equipment";
 import { resolveRoll, type RollResult } from "@/lib/roll";
 import { ABILITY_KEYS, abilityBonus, type AbilityKey } from "@/lib/sheet";
 
@@ -9,24 +10,47 @@ const POTENCY_OPTIONS = [3, 4, 5, 6];
 
 export function Roller({
   abilityDots,
+  weapons,
   staminaAvailable,
   focusAvailable,
   onResolve,
 }: {
   abilityDots: Record<AbilityKey, { dots: number }>;
+  weapons: EquippedWeapon[];
   staminaAvailable: number;
   focusAvailable: number;
   onResolve: (pool: "stamina" | "focus", clearedCount: number, crit: boolean) => void;
 }) {
-  const [ability, setAbility] = useState<AbilityKey>("STR");
-  const [pool, setPool] = useState<"stamina" | "focus">("stamina");
-  const [potency, setPotency] = useState(5);
+  // -1 means manual mode (no weapon selected — free choice of ability,
+  // pool, and Potency, e.g. for skill checks or spells).
+  const [weaponIndex, setWeaponIndex] = useState(-1);
+  const [weaponAbility, setWeaponAbility] = useState<AbilityKey>("STR");
+  const [manualAbility, setManualAbility] = useState<AbilityKey>("STR");
+  const [manualPool, setManualPool] = useState<"stamina" | "focus">("stamina");
+  const [manualPotency, setManualPotency] = useState(5);
   const [riskCount, setRiskCount] = useState(0);
   const [result, setResult] = useState<RollResult | null>(null);
   const [rollId, setRollId] = useState(0);
 
+  const equippedWeapon = weaponIndex >= 0 && weaponIndex < weapons.length ? weapons[weaponIndex] : null;
+  const weaponDef = equippedWeapon
+    ? WEAPON_CATALOG.find((w) => w.name === equippedWeapon.name)
+    : null;
+
+  const ability = weaponDef ? weaponAbility : manualAbility;
+  const pool = weaponDef ? "stamina" : manualPool;
+  const potency = weaponDef ? QUALITY_POTENCY[equippedWeapon!.quality] : manualPotency;
+
   const available = pool === "stamina" ? staminaAvailable : focusAvailable;
   const cappedRiskCount = Math.min(riskCount, available);
+
+  const selectWeapon = (index: number) => {
+    setWeaponIndex(index);
+    if (index >= 0) {
+      const def = WEAPON_CATALOG.find((w) => w.name === weapons[index].name);
+      if (def) setWeaponAbility(def.attackScores[0]);
+    }
+  };
 
   const roll = () => {
     const rolled = resolveRoll(abilityBonus(abilityDots[ability].dots), cappedRiskCount, potency);
@@ -40,50 +64,97 @@ export function Roller({
       <div className="flex flex-wrap items-end gap-3">
         <label className="flex flex-col gap-1 text-xs">
           <span className="font-semibold uppercase tracking-wide text-[var(--foreground)]/60">
-            Ability
+            Weapon
           </span>
           <select
-            value={ability}
-            onChange={(e) => setAbility(e.target.value as AbilityKey)}
+            value={weaponIndex}
+            onChange={(e) => selectWeapon(Number(e.target.value))}
             className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1"
           >
-            {ABILITY_KEYS.map((key) => (
-              <option key={key} value={key}>
-                {key} (+{abilityBonus(abilityDots[key].dots)})
+            <option value={-1}>Manual (skill check / spell)</option>
+            {weapons.map((w, i) => (
+              <option key={i} value={i}>
+                {w.name} ({w.quality})
               </option>
             ))}
           </select>
         </label>
 
-        <label className="flex flex-col gap-1 text-xs">
-          <span className="font-semibold uppercase tracking-wide text-[var(--foreground)]/60">
-            Risk Pool
-          </span>
-          <select
-            value={pool}
-            onChange={(e) => setPool(e.target.value as "stamina" | "focus")}
-            className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1"
-          >
-            <option value="stamina">Stamina ({staminaAvailable} available)</option>
-            <option value="focus">Focus ({focusAvailable} available)</option>
-          </select>
-        </label>
+        {weaponDef && weaponDef.attackScores.length > 1 ? (
+          <label className="flex flex-col gap-1 text-xs">
+            <span className="font-semibold uppercase tracking-wide text-[var(--foreground)]/60">
+              Ability
+            </span>
+            <select
+              value={weaponAbility}
+              onChange={(e) => setWeaponAbility(e.target.value as AbilityKey)}
+              className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1"
+            >
+              {weaponDef.attackScores.map((key) => (
+                <option key={key} value={key}>
+                  {key} (+{abilityBonus(abilityDots[key].dots)})
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : (
+          !weaponDef && (
+            <label className="flex flex-col gap-1 text-xs">
+              <span className="font-semibold uppercase tracking-wide text-[var(--foreground)]/60">
+                Ability
+              </span>
+              <select
+                value={manualAbility}
+                onChange={(e) => setManualAbility(e.target.value as AbilityKey)}
+                className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1"
+              >
+                {ABILITY_KEYS.map((key) => (
+                  <option key={key} value={key}>
+                    {key} (+{abilityBonus(abilityDots[key].dots)})
+                  </option>
+                ))}
+              </select>
+            </label>
+          )
+        )}
+
+        {!weaponDef && (
+          <label className="flex flex-col gap-1 text-xs">
+            <span className="font-semibold uppercase tracking-wide text-[var(--foreground)]/60">
+              Risk Pool
+            </span>
+            <select
+              value={manualPool}
+              onChange={(e) => setManualPool(e.target.value as "stamina" | "focus")}
+              className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1"
+            >
+              <option value="stamina">Stamina ({staminaAvailable} available)</option>
+              <option value="focus">Focus ({focusAvailable} available)</option>
+            </select>
+          </label>
+        )}
 
         <label className="flex flex-col gap-1 text-xs">
           <span className="font-semibold uppercase tracking-wide text-[var(--foreground)]/60">
             Potency
           </span>
-          <select
-            value={potency}
-            onChange={(e) => setPotency(Number(e.target.value))}
-            className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1"
-          >
-            {POTENCY_OPTIONS.map((p) => (
-              <option key={p} value={p}>
-                {p}+
-              </option>
-            ))}
-          </select>
+          {weaponDef ? (
+            <span className="rounded border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-2 py-1">
+              {potency}+ ({equippedWeapon!.quality})
+            </span>
+          ) : (
+            <select
+              value={manualPotency}
+              onChange={(e) => setManualPotency(Number(e.target.value))}
+              className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-1"
+            >
+              {POTENCY_OPTIONS.map((p) => (
+                <option key={p} value={p}>
+                  {p}+
+                </option>
+              ))}
+            </select>
+          )}
         </label>
 
         <label className="flex flex-col gap-1 text-xs">

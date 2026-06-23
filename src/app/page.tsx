@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { Defenses } from "@/components/Defenses";
 import { DotTrack } from "@/components/DotTrack";
+import { Equipment } from "@/components/Equipment";
 import { FocusList } from "@/components/FocusList";
 import { GaugeBar } from "@/components/GaugeBar";
 import { Roller } from "@/components/Roller";
 import { WoundGauge } from "@/components/WoundGauge";
 import { useEditMode } from "@/hooks/useEditMode";
+import { armorDefense, type Inventory } from "@/lib/equipment";
 import {
   ABILITY_DOT_TIERS,
   ABILITY_KEYS,
@@ -58,6 +60,8 @@ export default function Home() {
       );
       return { ...s, resources, wounds };
     });
+
+  const setInventory = (inventory: Inventory) => setSheet((s) => ({ ...s, inventory }));
 
   const handleRollResolve = (pool: "stamina" | "focus", clearedCount: number, crit: boolean) =>
     setSheet((s) => {
@@ -123,12 +127,22 @@ export default function Home() {
           Defenses
         </h2>
         <Defenses
-          armor={sheet.armor}
+          armor={armorDefense(sheet.inventory)}
           fortitude={fortitude(sheet.abilities)}
           reflex={reflex(sheet.abilities)}
           will={will(sheet.abilities)}
+        />
+      </section>
+
+      <section className="surface-shadow flex flex-col gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--foreground)]/60">
+          Equipment
+        </h2>
+        <Equipment
+          inventory={sheet.inventory}
+          conBonus={abilityBonus(sheet.abilities.CON.dots)}
           editMode={editMode}
-          setArmor={(armor) => setSheet((s) => ({ ...s, armor }))}
+          setInventory={setInventory}
         />
       </section>
 
@@ -138,6 +152,7 @@ export default function Home() {
         </h2>
         <Roller
           abilityDots={sheet.abilities}
+          weapons={sheet.inventory.weapons}
           staminaAvailable={staminaMax - sheet.staminaExhausted}
           focusAvailable={focusMax - sheet.focusExhausted}
           onResolve={handleRollResolve}
