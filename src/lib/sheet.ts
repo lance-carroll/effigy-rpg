@@ -22,6 +22,18 @@ export function abilityBonus(dots: number): number {
   return bonus;
 }
 
+// Six focuses per ability. A focus is earned (selectable) each time a
+// new ability bonus threshold is reached, up to all six at +6.
+export const FOCUS_LISTS: Record<AbilityKey, string[]> = {
+  STR: ["Athletics", "Intimidation", "Force", "Grappling", "Construction", "Hauling"],
+  DEX: ["Agility", "Finesse", "Stealth", "Aim", "Riding", "Reflexes"],
+  CON: ["Endurance", "Grit", "Survival", "Resistance", "Recovery", "Metabolism"],
+  INT: ["Knowledge", "Investigation", "Arcana", "Engineering", "Medicine", "Tactics"],
+  WIS: ["Perception", "Insight", "Navigation", "Vigilance", "Herbalism", "Attunement"],
+  CHA: ["Influence", "Streetwise", "Deception", "Performance", "Leadership", "Charm"],
+  LCK: ["Intuition", "Fortune", "Scavenging", "Omens", "Timing", "Providence"],
+};
+
 export type ResourceKey = "stamina" | "focus" | "vigor";
 
 // Dots required for each of the 7 steps: 1-1-2 / 3-3-4 / 5-5-6 / 7-8.
@@ -65,6 +77,8 @@ export interface CharacterSheet {
 
   abilities: Record<AbilityKey, { dots: number }>;
   resources: Record<ResourceKey, { dots: number }>;
+  // Chosen focuses per ability — capped at abilityBonus(dots) selections.
+  focuses: Record<AbilityKey, string[]>;
 
   // Live play-mode state.
   staminaExhausted: number;
@@ -80,6 +94,10 @@ export function createBlankSheet(name = "New Character"): CharacterSheet {
     abilities: ABILITY_KEYS.reduce(
       (acc, key) => ({ ...acc, [key]: { dots: 0 } }),
       {} as CharacterSheet["abilities"],
+    ),
+    focuses: ABILITY_KEYS.reduce(
+      (acc, key) => ({ ...acc, [key]: [] }),
+      {} as CharacterSheet["focuses"],
     ),
     resources: {
       stamina: { dots: 0 },

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { DotTrack } from "@/components/DotTrack";
+import { FocusList } from "@/components/FocusList";
 import { GaugeBar } from "@/components/GaugeBar";
 import { WoundGauge } from "@/components/WoundGauge";
 import { useEditMode } from "@/hooks/useEditMode";
@@ -10,6 +11,7 @@ import {
   ABILITY_KEYS,
   abilityBonus,
   createBlankSheet,
+  FOCUS_LISTS,
   RESOURCE_DOT_TIERS,
   resourcePool,
   woundSlots,
@@ -26,7 +28,16 @@ export default function Home() {
   const focusMax = resourcePool(sheet.resources.focus.dots);
 
   const setAbilityDots = (key: AbilityKey, dots: number) =>
-    setSheet((s) => ({ ...s, abilities: { ...s.abilities, [key]: { dots } } }));
+    setSheet((s) => {
+      const abilities = { ...s.abilities, [key]: { dots } };
+      // Trim selected focuses if the bonus dropped below the count selected.
+      const slots = abilityBonus(dots);
+      const focuses = { ...s.focuses, [key]: s.focuses[key].slice(0, slots) };
+      return { ...s, abilities, focuses };
+    });
+
+  const setFocuses = (key: AbilityKey, selected: string[]) =>
+    setSheet((s) => ({ ...s, focuses: { ...s.focuses, [key]: selected } }));
 
   const setResourceDots = (key: ResourceKey, dots: number) =>
     setSheet((s) => {
@@ -98,13 +109,20 @@ export default function Home() {
           Abilities
         </h2>
         {ABILITY_KEYS.map((key) => (
-          <div key={key} className="flex items-center justify-between gap-3">
+          <div key={key} className="flex flex-col gap-1.5 py-1">
             <DotTrack
               label={`${key} (+${abilityBonus(sheet.abilities[key].dots)})`}
               dots={sheet.abilities[key].dots}
               tiers={ABILITY_DOT_TIERS}
               editMode={editMode}
               setDots={(dots) => setAbilityDots(key, dots)}
+            />
+            <FocusList
+              options={FOCUS_LISTS[key]}
+              selected={sheet.focuses[key]}
+              slots={abilityBonus(sheet.abilities[key].dots)}
+              editMode={editMode}
+              setSelected={(selected) => setFocuses(key, selected)}
             />
           </div>
         ))}
