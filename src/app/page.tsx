@@ -4,6 +4,7 @@ import { useState } from "react";
 import { DotTrack } from "@/components/DotTrack";
 import { FocusList } from "@/components/FocusList";
 import { GaugeBar } from "@/components/GaugeBar";
+import { Roller } from "@/components/Roller";
 import { WoundGauge } from "@/components/WoundGauge";
 import { useEditMode } from "@/hooks/useEditMode";
 import {
@@ -54,6 +55,15 @@ export default function Home() {
       return { ...s, resources, wounds };
     });
 
+  const handleRollResolve = (pool: "stamina" | "focus", clearedCount: number, crit: boolean) =>
+    setSheet((s) => {
+      const next = { ...s };
+      if (pool === "stamina") next.staminaExhausted = s.staminaExhausted + clearedCount;
+      else next.focusExhausted = s.focusExhausted + clearedCount;
+      if (crit) next.tidePoints = Math.min(s.tidePoints + 1, s.tidePointsMax);
+      return next;
+    });
+
   return (
     <main className="mx-auto flex max-w-2xl flex-1 flex-col gap-6 p-8">
       <div className="flex items-center justify-between">
@@ -101,6 +111,18 @@ export default function Home() {
         <WoundGauge
           wounds={sheet.wounds}
           setWounds={(wounds) => setSheet((s) => ({ ...s, wounds }))}
+        />
+      </section>
+
+      <section className="surface-shadow flex flex-col gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--foreground)]/60">
+          Roller
+        </h2>
+        <Roller
+          abilityDots={sheet.abilities}
+          staminaAvailable={staminaMax - sheet.staminaExhausted}
+          focusAvailable={focusMax - sheet.focusExhausted}
+          onResolve={handleRollResolve}
         />
       </section>
 
