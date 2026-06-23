@@ -70,6 +70,25 @@ export function woundSlots(vigorDots: number): number {
   return resourcePool(vigorDots);
 }
 
+// Derived defenses: higher of the two governing ability bonuses + 6,
+// clamped to [1, 12]. Armor has no formula — it's equipment only, so
+// it's tracked as a raw editable value until equipment exists.
+function derivedDefense(bonusA: number, bonusB: number): number {
+  return Math.max(1, Math.min(12, Math.max(bonusA, bonusB) + 6));
+}
+
+export function fortitude(abilities: Record<AbilityKey, { dots: number }>): number {
+  return derivedDefense(abilityBonus(abilities.STR.dots), abilityBonus(abilities.CON.dots));
+}
+
+export function reflex(abilities: Record<AbilityKey, { dots: number }>): number {
+  return derivedDefense(abilityBonus(abilities.DEX.dots), abilityBonus(abilities.INT.dots));
+}
+
+export function will(abilities: Record<AbilityKey, { dots: number }>): number {
+  return derivedDefense(abilityBonus(abilities.WIS.dots), abilityBonus(abilities.CHA.dots));
+}
+
 export type WoundState = "empty" | "flesh" | "mortal";
 
 export interface CharacterSheet {
@@ -79,6 +98,9 @@ export interface CharacterSheet {
   resources: Record<ResourceKey, { dots: number }>;
   // Chosen focuses per ability — capped at abilityBonus(dots) selections.
   focuses: Record<AbilityKey, string[]>;
+
+  // Equipment-only defense — no formula until equipment is modeled.
+  armor: number;
 
   // Live play-mode state.
   staminaExhausted: number;
@@ -104,6 +126,7 @@ export function createBlankSheet(name = "New Character"): CharacterSheet {
       focus: { dots: 0 },
       vigor: { dots: 0 },
     },
+    armor: 0,
     staminaExhausted: 0,
     focusExhausted: 0,
     tidePoints: 3,
