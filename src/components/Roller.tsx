@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { AnimatedDie } from "@/components/AnimatedDie";
 import { resolveRoll, type RollResult } from "@/lib/roll";
 import { ABILITY_KEYS, abilityBonus, type AbilityKey } from "@/lib/sheet";
 
@@ -22,6 +23,7 @@ export function Roller({
   const [potency, setPotency] = useState(5);
   const [riskCount, setRiskCount] = useState(0);
   const [result, setResult] = useState<RollResult | null>(null);
+  const [rollId, setRollId] = useState(0);
 
   const available = pool === "stamina" ? staminaAvailable : focusAvailable;
   const cappedRiskCount = Math.min(riskCount, available);
@@ -29,6 +31,7 @@ export function Roller({
   const roll = () => {
     const rolled = resolveRoll(abilityBonus(abilityDots[ability].dots), cappedRiskCount, potency);
     setResult(rolled);
+    setRollId((id) => id + 1);
     onResolve(pool, rolled.clearedCount, rolled.crit);
   };
 
@@ -108,24 +111,23 @@ export function Roller({
 
       {result && (
         <div className="flex flex-wrap items-center gap-3 rounded-md border border-[var(--color-border)] p-3 text-sm">
-          <span className="font-mono text-lg font-bold" style={{ color: result.crit ? "var(--color-accent)" : "inherit" }}>
-            d12: {result.d12}
-            {result.crit && " — CRIT"}
-          </span>
+          <AnimatedDie shape="pentagon" sides={12} finalValue={result.d12} rollId={rollId} highlight={result.crit} size={44} />
+          {result.crit && (
+            <span className="text-xs font-bold uppercase" style={{ color: "var(--color-accent)" }}>
+              Crit
+            </span>
+          )}
           <span>+{result.abilityBonus} ability</span>
           <span className="flex gap-1">
             {result.riskDice.map((d, i) => (
-              <span
+              <AnimatedDie
                 key={i}
-                className="flex h-6 w-6 items-center justify-center rounded border text-xs"
-                style={{
-                  borderColor: d.cleared ? "var(--color-accent)" : "var(--color-border)",
-                  backgroundColor: d.cleared ? "var(--color-accent)" : "transparent",
-                  color: d.cleared ? "var(--color-accent-ink)" : "inherit",
-                }}
-              >
-                {d.value}
-              </span>
+                shape="square"
+                sides={6}
+                finalValue={d.value}
+                rollId={rollId}
+                highlight={d.cleared}
+              />
             ))}
           </span>
           <span className="font-mono text-lg font-bold">= {result.total}</span>
