@@ -7,9 +7,9 @@ export const ABILITY_KEYS: AbilityKey[] = ["STR", "DEX", "CON", "INT", "WIS", "C
 // Dots required to reach each bonus tier: 2-2-3-4-4-5, 20 dots total for +6.
 export const ABILITY_TIER_DOTS = [2, 2, 3, 4, 4, 5] as const;
 
-// Ability dots grouped into tiers, one group per bonus threshold, for
-// rendering as stacked rows with breakpoint dividers between them.
-export const ABILITY_DOT_TIERS: number[] = [...ABILITY_TIER_DOTS];
+// Ability dots grouped into rows, one row per bonus threshold, for
+// rendering as stacked rows. Each row has a single dot group.
+export const ABILITY_DOT_TIERS: number[][] = ABILITY_TIER_DOTS.map((size) => [size]);
 
 export function abilityBonus(dots: number): number {
   let remaining = dots;
@@ -32,9 +32,15 @@ export const RESOURCE_STEP_DOTS = [1, 1, 2, 3, 3, 4, 5, 5, 6, 7, 8] as const;
 // instead of a pool increase.
 const RESOURCE_QUALITY_STEP_INDEXES = new Set([2, 5, 8, 10]);
 
-// Resource dots grouped into the SRD's four tiers (1-1-2 / 3-3-4 / 5-5-6 / 7-8),
-// for rendering as stacked rows with breakpoint dividers between them.
-export const RESOURCE_DOT_TIERS: number[] = [4, 10, 16, 15];
+// Resource dots grouped into the SRD's four tiers (1-1-2 / 3-3-4 / 5-5-6 / 7-8).
+// Each tier is one row (line break between rows); within a row, each step
+// is its own dot group separated by a single pipe divider.
+export const RESOURCE_DOT_TIERS: number[][] = [
+  [1, 1, 2],
+  [3, 3, 4],
+  [5, 5, 6],
+  [7, 8],
+];
 
 export function resourcePool(dots: number): number {
   let remaining = dots;
