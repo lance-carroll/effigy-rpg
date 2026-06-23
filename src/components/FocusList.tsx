@@ -26,7 +26,7 @@ export function FocusList({
   };
 
   return (
-    <div className="flex flex-wrap gap-1.5 pl-1">
+    <div className="flex flex-nowrap gap-1 pl-1">
       {options.map((focus) => {
         const isSelected = selected.includes(focus);
         const atCap = !isSelected && selected.length >= slots;
@@ -37,7 +37,7 @@ export function FocusList({
             type="button"
             disabled={!editMode || atCap}
             aria-pressed={isSelected}
-            className={`rounded-full border px-2 py-0.5 text-[11px] transition-colors ${
+            className={`whitespace-nowrap rounded-full border px-1.5 py-0.5 text-[9px] transition-colors ${
               editMode && !atCap ? "cursor-pointer" : "cursor-default"
             }`}
             style={{
