@@ -120,20 +120,28 @@ export default function Home() {
           tiers={RESOURCE_DOT_TIERS}
           editMode={editMode}
           setDots={(dots) => setResourceDots("stamina", dots)}
+          stacked
+          dotSize="sm"
         />
+        <hr className="border-[var(--color-border)]" />
         <DotTrack
           label="Focus"
           dots={sheet.resources.focus.dots}
           tiers={RESOURCE_DOT_TIERS}
           editMode={editMode}
           setDots={(dots) => setResourceDots("focus", dots)}
+          stacked
+          dotSize="sm"
         />
+        <hr className="border-[var(--color-border)]" />
         <DotTrack
           label="Vigor"
           dots={sheet.resources.vigor.dots}
           tiers={RESOURCE_DOT_TIERS}
           editMode={editMode}
           setDots={(dots) => setResourceDots("vigor", dots)}
+          stacked
+          dotSize="sm"
         />
       </section>
     </main>
